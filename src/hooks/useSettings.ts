@@ -36,7 +36,9 @@ export const setGlobalLanguage = (lang: SupportedLanguage) => {
 
 export const subscribeToLanguage = (listener: (lang: SupportedLanguage) => void) => {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 };
 
 export const useSettings = () => {

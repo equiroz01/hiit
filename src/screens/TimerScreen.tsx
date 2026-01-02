@@ -17,7 +17,8 @@ import { useSessions } from '../hooks/useStorage';
 import { Button } from '../components/Button';
 import { ProgressDots } from '../components/ProgressDots';
 import { formatTime } from '../utils/time';
-import { t, interpolate, getMotivationalPhrase } from '../i18n';
+import { useTranslations } from '../i18n';
+import { useResponsive } from '../hooks/useResponsive';
 
 type TimerScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Timer'>;
@@ -27,6 +28,8 @@ type TimerScreenProps = {
 export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) => {
   const { config, presetName } = route.params;
   const { saveSession } = useSessions();
+  const { t, interpolate, getMotivationalPhrase } = useTranslations();
+  const { isTablet, isLandscape, timerFontSize, containerPadding } = useResponsive();
   const [motivationalText, setMotivationalText] = useState('');
 
   const handleComplete = useCallback(
@@ -95,7 +98,7 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
     if (state.secondsLeft <= 3 && state.secondsLeft > 0) {
       setMotivationalText(getMotivationalPhrase('almostDone'));
     }
-  }, [state.phase, state.currentRound, state.secondsLeft, config]);
+  }, [state.phase, state.currentRound, state.secondsLeft, config, getMotivationalPhrase]);
 
   // Handle back button
   useEffect(() => {
@@ -188,8 +191,12 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
       )}
 
       {/* Timer Display */}
-      <View style={styles.timerContainer}>
-        <Text style={[styles.timer, state.phase === 'finished' && styles.timerFinished]}>
+      <View style={[styles.timerContainer, isLandscape && styles.timerContainerLandscape]}>
+        <Text style={[
+          styles.timer,
+          { fontSize: timerFontSize },
+          state.phase === 'finished' && styles.timerFinished
+        ]}>
           {state.phase === 'finished' ? '00:00' : formatTime(state.secondsLeft)}
         </Text>
         {state.secondsLeft <= 3 && state.secondsLeft > 0 && state.phase !== 'prepare' && (
@@ -217,7 +224,11 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
       )}
 
       {/* Controls */}
-      <View style={styles.controls}>
+      <View style={[
+        styles.controls,
+        isTablet && styles.controlsTablet,
+        isLandscape && styles.controlsLandscape
+      ]}>
         {state.phase === 'finished' ? (
           <Button
             title={t.back}
@@ -268,26 +279,27 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingHorizontal: 24,
   },
   roundText: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: '600',
     color: colors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   phaseText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   motivationalContainer: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 16,
+    paddingHorizontal: 24,
+    marginTop: 20,
   },
   motivationalText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
     fontStyle: 'italic',
@@ -297,8 +309,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  timerContainerLandscape: {
+    flex: 2,
+  },
   timer: {
-    fontSize: 120,
     fontWeight: '200',
     color: colors.text,
     fontVariant: ['tabular-nums'],
@@ -307,36 +321,46 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   countdownIndicator: {
-    width: 60,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 20,
+    width: 80,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 24,
   },
   finishedContainer: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 44,
   },
   finishedTitle: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: '800',
     color: colors.primary,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   finishedSubtitle: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   controls: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 24,
+    paddingBottom: 44,
+  },
+  controlsTablet: {
+    paddingHorizontal: 60,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  controlsLandscape: {
+    paddingBottom: 24,
   },
   mainButton: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   secondaryControls: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 40,
+    gap: 48,
   },
 });

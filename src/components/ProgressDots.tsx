@@ -59,36 +59,37 @@ export const ProgressDots: React.FC<ProgressDotsProps> = ({ total, current, phas
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
   },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: colors.border,
   },
   dotCompleted: {
     backgroundColor: colors.textSecondary,
   },
   dotCurrent: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
   },
   progressBarContainer: {
-    height: 8,
+    height: 10,
     backgroundColor: colors.border,
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 5,
   },
 });

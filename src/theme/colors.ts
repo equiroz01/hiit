@@ -1,29 +1,39 @@
 export const colors = {
   // Fondos
-  background: '#F7F8FA',
-  backgroundDark: '#1E2227',
+  background: '#F5F5F7',
+  backgroundDark: '#1A1A1A',
 
-  // Texto
-  text: '#1E2227',
-  textSecondary: '#6B7280',
+  // Texto - mejor contraste
+  text: '#1A1A1A',
+  textSecondary: '#5A5A5A',
   textLight: '#FFFFFF',
+  textMuted: '#8A8A8A',
 
-  // Acentos
-  primary: '#7CFF4F',      // Verde lima fuerte - WORK
-  secondary: '#0047FF',     // Azul profundo
-  warning: '#FF9F43',       // Naranja suave - REST
+  // Acentos - colores más balanceados
+  primary: '#34C759',        // Verde iOS - excelente contraste
+  primaryDark: '#248A3D',    // Verde oscuro para texto sobre primary
+  secondary: '#007AFF',      // Azul iOS
+  accent: '#FF9500',         // Naranja iOS
 
   // UI
-  border: '#D9DFE5',
+  border: '#E5E5E7',
   cardBackground: '#FFFFFF',
+  cardBackgroundAlt: '#F9F9FB',
 
-  // Estados del timer
-  work: '#7CFF4F',
-  rest: '#FF9F43',
+  // Estados del timer - colores vibrantes pero legibles
+  work: '#34C759',           // Verde para trabajo
+  workDark: '#1E7A34',       // Verde oscuro para texto
+  rest: '#FF9500',           // Naranja para descanso
+  restDark: '#C45D00',       // Naranja oscuro para texto
 
   // Tints para fondos durante sesión
-  workTint: 'rgba(124, 255, 79, 0.15)',
-  restTint: 'rgba(255, 159, 67, 0.15)',
+  workTint: 'rgba(52, 199, 89, 0.12)',
+  restTint: 'rgba(255, 149, 0, 0.12)',
+
+  // Estados adicionales
+  success: '#34C759',
+  warning: '#FF9500',
+  error: '#FF3B30',
 };
 
 export type ColorKeys = keyof typeof colors;

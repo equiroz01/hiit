@@ -3,7 +3,7 @@
     "name": "Pulse HIIT",
     "slug": "pulse-hiit",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -14,19 +14,30 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hnl.pulsehiit",
+      "bundleIdentifier": "com.equiroz.pulsehiit",
+      "requireFullScreen": false,
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F7F8FA"
+        "backgroundColor": "#1E2227"
       },
-      "package": "com.hnl.pulsehiit",
+      "package": "com.equiroz.pulsehiit",
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -34,6 +45,12 @@
     },
     "plugins": [
       "expo-localization"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c6976de9-006d-401c-ad3d-176f3acb0084"
+      }
+    },
+    "owner": "equiroz"
   }
 }

@@ -6,6 +6,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { TimerScreen } from '../screens/TimerScreen';
 import { PresetsScreen } from '../screens/PresetsScreen';
 import { StatsScreen } from '../screens/StatsScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -29,6 +30,7 @@ export const AppNavigator: React.FC = () => {
         />
         <Stack.Screen name="Presets" component={PresetsScreen} />
         <Stack.Screen name="Stats" component={StatsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

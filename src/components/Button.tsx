@@ -83,15 +83,15 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonLarge: {
-    paddingVertical: 18,
-    paddingHorizontal: 32,
+    paddingVertical: 20,
+    paddingHorizontal: 36,
     borderRadius: 16,
   },
   primaryButton: {
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: colors.text,
   },
   ghostButton: {
     backgroundColor: 'transparent',
@@ -112,14 +112,16 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   buttonTextLarge: {
-    fontSize: 18,
+    fontSize: 20,
+    letterSpacing: 1,
   },
   primaryText: {
-    color: colors.text,
+    color: colors.textLight,
   },
   secondaryText: {
     color: colors.textLight,
@@ -128,9 +130,9 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   ghostText: {
-    color: colors.textSecondary,
+    color: colors.text,
   },
   disabledText: {
-    color: colors.textSecondary,
+    color: colors.textMuted,
   },
 });

@@ -27,13 +27,13 @@ export const PresetChip: React.FC<PresetChipProps> = ({ preset, onPress, selecte
 const styles = StyleSheet.create({
   chip: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 2,
     borderColor: colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginRight: 10,
-    minWidth: 100,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginRight: 12,
+    minWidth: 120,
     alignItems: 'center',
   },
   chipSelected: {
@@ -41,20 +41,21 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   name: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: colors.text,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   nameSelected: {
-    color: colors.text,
+    color: colors.textLight,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
   subtitleSelected: {
-    color: colors.text,
-    opacity: 0.8,
+    color: colors.textLight,
+    opacity: 0.9,
   },
 });

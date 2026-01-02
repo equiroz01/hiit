@@ -16,7 +16,8 @@ import { TimePicker, RoundPicker } from '../components/TimePicker';
 import { PresetChip } from '../components/PresetChip';
 import { Button } from '../components/Button';
 import { getTotalWorkoutTime, formatTimeShort } from '../utils/time';
-import { t } from '../i18n';
+import { useTranslations } from '../i18n';
+import { useResponsive } from '../hooks/useResponsive';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -26,6 +27,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { presets } = usePresets();
   const { lastConfig, saveLastConfig } = useLastConfig();
   const { getStats } = useSessions();
+  const { t } = useTranslations();
+  const { isTablet, containerPadding, cardPadding } = useResponsive();
 
   const [workSeconds, setWorkSeconds] = useState(lastConfig.workSeconds);
   const [restSeconds, setRestSeconds] = useState(lastConfig.restSeconds);
@@ -72,20 +75,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isTablet && styles.scrollContentTablet,
+          { padding: containerPadding }
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t.appName}</Text>
-          <TouchableOpacity
-            style={styles.statsButton}
-            onPress={() => navigation.navigate('Stats')}
-          >
-            <Text style={styles.statsButtonText}>
-              {stats.streak > 0 ? `${stats.streak} ${t.days}` : t.stats}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Text style={styles.headerButtonIcon}>⚙️</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.statsButton}
+              onPress={() => navigation.navigate('Stats')}
+            >
+              <Text style={styles.statsButtonText}>
+                {stats.streak > 0 ? `${stats.streak} ${t.days}` : t.stats}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Quick Stats Card */}
@@ -124,7 +139,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {/* Custom Config */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t.custom}</Text>
-          <View style={styles.configCard}>
+          <View style={[styles.configCard, { padding: cardPadding }]}>
             <TimePicker
               label={t.work}
               value={workSeconds}
@@ -160,7 +175,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       </ScrollView>
 
       {/* Start Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, isTablet && styles.footerTablet]}>
         <Button
           title={t.start}
           onPress={handleStart}
@@ -181,72 +196,92 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 120,
+  },
+  scrollContentTablet: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
     color: colors.text,
+    letterSpacing: -0.5,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: colors.cardBackground,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerButtonIcon: {
+    fontSize: 20,
   },
   statsButton: {
-    backgroundColor: colors.cardBackground,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 24,
   },
   statsButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textLight,
   },
   statsCard: {
     backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 28,
   },
   statsCardText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textLight,
     textAlign: 'center',
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.text,
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.secondary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   presetsContainer: {
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   configCard: {
     backgroundColor: colors.cardBackground,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: colors.border,
   },
   totalContainer: {
@@ -254,18 +289,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 2,
     borderColor: colors.border,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   totalValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: colors.text,
   },
   footer: {
@@ -274,12 +310,18 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 20,
-    paddingBottom: 34,
+    paddingBottom: 40,
     backgroundColor: colors.background,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: colors.border,
   },
   startButton: {
     width: '100%',
+  },
+  footerTablet: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 40,
   },
 });

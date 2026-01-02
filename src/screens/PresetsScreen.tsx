@@ -12,7 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
 import { RootStackParamList, Preset } from '../types';
 import { usePresets } from '../hooks/useStorage';
-import { t, interpolate } from '../i18n';
+import { useTranslations } from '../i18n';
 
 type PresetsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Presets'>;
@@ -20,6 +20,7 @@ type PresetsScreenProps = {
 
 export const PresetsScreen: React.FC<PresetsScreenProps> = ({ navigation }) => {
   const { presets, toggleFavorite, deletePreset } = usePresets();
+  const { t, interpolate } = useTranslations();
 
   const handlePresetPress = (preset: Preset) => {
     navigation.navigate('Timer', {
@@ -110,17 +111,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     borderBottomColor: colors.border,
   },
   backButton: {
-    fontSize: 16,
+    fontSize: 18,
     color: colors.secondary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: colors.text,
   },
   listContent: {
@@ -130,41 +131,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 14,
+    borderWidth: 2,
     borderColor: colors.border,
   },
   presetInfo: {
     flex: 1,
   },
   presetName: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   presetDetails: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
   favoriteButton: {
-    padding: 8,
+    padding: 10,
   },
   favoriteIcon: {
-    fontSize: 24,
-    color: colors.textSecondary,
+    fontSize: 28,
+    color: colors.textMuted,
   },
   favoriteActive: {
-    color: colors.warning,
+    color: colors.accent,
   },
   hint: {
     padding: 20,
     alignItems: 'center',
   },
   hintText: {
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
 });

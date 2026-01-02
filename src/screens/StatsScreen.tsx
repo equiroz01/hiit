@@ -11,7 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
 import { RootStackParamList } from '../types';
 import { useSessions } from '../hooks/useStorage';
-import { t } from '../i18n';
+import { useTranslations } from '../i18n';
 
 type StatsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Stats'>;
@@ -19,6 +19,7 @@ type StatsScreenProps = {
 
 export const StatsScreen: React.FC<StatsScreenProps> = ({ navigation }) => {
   const { sessions, getStats } = useSessions();
+  const { t } = useTranslations();
   const stats = getStats();
 
   const recentSessions = sessions
@@ -62,8 +63,8 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ navigation }) => {
         {/* Main Stats */}
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, styles.statCardPrimary]}>
-            <Text style={styles.statValue}>{stats.streak}</Text>
-            <Text style={styles.statLabel}>{t.streakDays}</Text>
+            <Text style={[styles.statValue, styles.statValueLight]}>{stats.streak}</Text>
+            <Text style={[styles.statLabel, styles.statLabelLight]}>{t.streakDays}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{stats.todayWorkouts}</Text>
@@ -123,17 +124,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     borderBottomColor: colors.border,
   },
   backButton: {
-    fontSize: 16,
+    fontSize: 18,
     color: colors.secondary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: colors.text,
   },
   content: {
@@ -141,15 +142,15 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
+    gap: 14,
+    marginBottom: 14,
   },
   statCard: {
     flex: 1,
     backgroundColor: colors.cardBackground,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: colors.border,
     alignItems: 'center',
   },
@@ -158,65 +159,77 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   statValue: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: '800',
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  statValueLight: {
+    color: colors.textLight,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  statLabelLight: {
+    color: colors.textLight,
+    opacity: 0.9,
+  },
   section: {
-    marginTop: 24,
+    marginTop: 28,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.text,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sessionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 2,
     borderColor: colors.border,
   },
   sessionInfo: {
     flex: 1,
   },
   sessionName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   sessionDetails: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
   sessionDate: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 70,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: colors.text,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '500',
     color: colors.textSecondary,
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
