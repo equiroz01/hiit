@@ -1,39 +1,83 @@
+/**
+ * Pulse HIIT - Color Palette
+ *
+ * Palette:
+ * - Primary:   #5465ff (Azul violeta vibrante)
+ * - Dark:      #030027 (Azul oscuro profundo)
+ * - Muted:     #bbbac6 (Gris lavanda claro)
+ * - Secondary: #aceb98 (Verde pastel suave)
+ * - Accent:    #87ff65 (Verde neón brillante)
+ * - White:     #FFFFFF
+ */
+
 export const colors = {
-  // Fondos
-  background: '#F5F5F7',
-  backgroundDark: '#1A1A1A',
+  // ===== Fondos =====
+  background: '#FFFFFF',           // Blanco puro para fondo principal
+  backgroundAlt: '#F8F8FA',        // Blanco con tinte muy suave
+  backgroundDark: '#030027',       // Azul oscuro profundo (dark mode)
 
-  // Texto - mejor contraste
-  text: '#1A1A1A',
-  textSecondary: '#5A5A5A',
-  textLight: '#FFFFFF',
-  textMuted: '#8A8A8A',
+  // ===== Texto =====
+  text: '#030027',                 // Azul oscuro para texto principal
+  textSecondary: '#6B6C87',        // Intermedio (mezcla #030027 + #bbbac6)
+  textMuted: '#bbbac6',            // Gris lavanda claro para texto secundario
+  textLight: '#FFFFFF',            // Blanco para texto sobre fondos oscuros
 
-  // Acentos - colores más balanceados
-  primary: '#34C759',        // Verde iOS - excelente contraste
-  primaryDark: '#248A3D',    // Verde oscuro para texto sobre primary
-  secondary: '#007AFF',      // Azul iOS
-  accent: '#FF9500',         // Naranja iOS
+  // ===== Acentos Principales =====
+  primary: '#5465ff',              // Azul violeta vibrante
+  primaryLight: '#7C89FF',         // Versión clara del primary
+  primaryDark: '#3D4DD9',          // Versión oscura del primary
 
-  // UI
-  border: '#E5E5E7',
-  cardBackground: '#FFFFFF',
-  cardBackgroundAlt: '#F9F9FB',
+  secondary: '#aceb98',            // Verde pastel suave
+  secondaryLight: '#C4F3B4',       // Versión clara del secondary
+  secondaryDark: '#8DD077',        // Versión oscura del secondary
 
-  // Estados del timer - colores vibrantes pero legibles
-  work: '#34C759',           // Verde para trabajo
-  workDark: '#1E7A34',       // Verde oscuro para texto
-  rest: '#FF9500',           // Naranja para descanso
-  restDark: '#C45D00',       // Naranja oscuro para texto
+  accent: '#87ff65',               // Verde neón brillante
+  accentLight: '#A5FF8A',          // Versión clara del accent
+  accentDark: '#6FE04D',           // Versión oscura del accent
 
-  // Tints para fondos durante sesión
-  workTint: 'rgba(52, 199, 89, 0.12)',
-  restTint: 'rgba(255, 149, 0, 0.12)',
+  // ===== UI Elements =====
+  border: '#E8E8EE',               // Borde suave neutral (tinte de #bbbac6)
+  borderMuted: '#bbbac6',          // Borde más visible
+  cardBackground: '#FFFFFF',       // Blanco puro para cards
+  cardBackgroundAlt: '#FAFAFA',    // Blanco alternativo
 
-  // Estados adicionales
-  success: '#34C759',
-  warning: '#FF9500',
-  error: '#FF3B30',
+  // ===== Estados del Timer =====
+  // WORK = Verde neón (energía, acción)
+  work: '#87ff65',
+  workDark: '#6FE04D',
+  workTint: 'rgba(135, 255, 101, 0.12)',
+
+  // REST = Verde pastel (relajación, recuperación)
+  rest: '#aceb98',
+  restDark: '#8DD077',
+  restTint: 'rgba(172, 235, 152, 0.12)',
+
+  // PREPARE = Azul violeta (preparación, enfoque)
+  prepare: '#5465ff',
+  prepareTint: 'rgba(84, 101, 255, 0.12)',
+
+  // ===== Estados Generales =====
+  success: '#87ff65',              // Verde neón para éxito
+  warning: '#aceb98',              // Verde pastel para advertencias
+  error: '#FF6B8A',                // Rosa/rojo suave para errores
+  info: '#5465ff',                 // Azul violeta para información
+
+  // ===== Gradientes =====
+  gradientPrimary: ['#5465ff', '#7C89FF'],
+  gradientSuccess: ['#87ff65', '#aceb98'],
+  gradientDark: ['#030027', '#1A1A3E'],
 };
 
 export type ColorKeys = keyof typeof colors;
+
+/**
+ * Utilidades de color
+ */
+export const getColorWithOpacity = (color: string, opacity: number): string => {
+  // Convierte hex a rgba
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};

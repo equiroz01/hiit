@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Fondo con esquinas redondeadas (1024x1024 para icon.png) -->
+  <rect width="1024" height="1024" rx="226" ry="226" fill="#030027"/>
+
+  <!-- Grupo del logo -->
+  <g transform="translate(512, 512)">
+    <!-- Pulso cardíaco -->
+    <path d="M -200 0 L -80 0 L -20 -80 L 40 80 L 100 -40 L 160 0 L 280 0"
+          stroke="#5465ff"
+          stroke-width="32"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none" filter="url(#glow)"/>
+
+    <!-- Círculo con flecha (representa ciclo HIIT) -->
+    <path d="M 0 -320 A 320 320 0 1 1 -8 -320"
+          stroke="#5465ff"
+          stroke-width="32"
+          stroke-linecap="round"
+          fill="none" filter="url(#glow)"/>
+
+    <!-- Punta de flecha -->
+    <path d="M -8 -320 L 40 -280 L -8 -240"
+          fill="#5465ff" filter="url(#glow)"/>
+  </g>
+</svg>

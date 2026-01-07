@@ -10,6 +10,9 @@ const KEYS = {
   LAST_CONFIG: '@pulse_hiit_last_config',
 };
 
+// Free tier preset limit
+const FREE_PRESET_LIMIT = 3;
+
 export const usePresets = () => {
   const [presets, setPresets] = useState<Preset[]>(defaultPresets);
   const [loading, setLoading] = useState(true);
@@ -77,8 +80,42 @@ export const usePresets = () => {
     }
   };
 
-  return { presets, loading, savePreset, deletePreset, toggleFavorite };
+  // Helper functions for premium limits
+  const getCustomPresetsCount = () => {
+    return presets.filter(p => !p.isDefault).length;
+  };
+
+  const canAddPreset = (isPremium: boolean) => {
+    const customCount = getCustomPresetsCount();
+    return isPremium || customCount < FREE_PRESET_LIMIT;
+  };
+
+  const getPresetLimitInfo = (isPremium: boolean) => {
+    const customCount = getCustomPresetsCount();
+    return {
+      current: customCount,
+      limit: isPremium ? null : FREE_PRESET_LIMIT,
+      canAdd: canAddPreset(isPremium),
+      isUnlimited: isPremium,
+    };
+  };
+
+  return {
+    presets,
+    loading,
+    savePreset,
+    deletePreset,
+    toggleFavorite,
+    // Premium limit helpers
+    canAddPreset,
+    getCustomPresetsCount,
+    getPresetLimitInfo,
+    FREE_PRESET_LIMIT,
+  };
 };
+
+// Free tier stats limit (days)
+const FREE_STATS_DAYS_LIMIT = 7;
 
 export const useSessions = () => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -171,7 +208,45 @@ export const useSessions = () => {
     };
   }, [sessions]);
 
-  return { sessions, saveSession, getStats };
+  // Filter sessions based on premium status
+  const getFilteredSessions = useCallback((isPremium: boolean): WorkoutSession[] => {
+    if (isPremium) {
+      return sessions;
+    }
+
+    // Free users only see last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - FREE_STATS_DAYS_LIMIT);
+
+    return sessions.filter(s => new Date(s.date) >= sevenDaysAgo);
+  }, [sessions]);
+
+  // Get info about stats limit
+  const getStatsLimitInfo = useCallback((isPremium: boolean) => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - FREE_STATS_DAYS_LIMIT);
+
+    const recentSessions = sessions.filter(s => new Date(s.date) >= sevenDaysAgo);
+    const olderSessions = sessions.filter(s => new Date(s.date) < sevenDaysAgo);
+
+    return {
+      totalSessions: sessions.length,
+      visibleSessions: isPremium ? sessions.length : recentSessions.length,
+      hiddenSessions: isPremium ? 0 : olderSessions.length,
+      isLimited: !isPremium && olderSessions.length > 0,
+      daysLimit: FREE_STATS_DAYS_LIMIT,
+    };
+  }, [sessions]);
+
+  return {
+    sessions,
+    saveSession,
+    getStats,
+    // Premium limit helpers
+    getFilteredSessions,
+    getStatsLimitInfo,
+    FREE_STATS_DAYS_LIMIT,
+  };
 };
 
 export const useLastConfig = () => {

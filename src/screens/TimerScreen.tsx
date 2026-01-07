@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   StatusBar,
   BackHandler,
+  Animated,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -14,9 +15,13 @@ import { colors } from '../theme/colors';
 import { RootStackParamList } from '../types';
 import { useTimer } from '../hooks/useTimer';
 import { useSessions } from '../hooks/useStorage';
+import { useHealthSync } from '../hooks/useHealthSync';
+import { useUserProfile } from '../hooks/useUserProfile';
+import { useProgramProgress } from '../hooks/useProgramProgress';
 import { Button } from '../components/Button';
 import { ProgressDots } from '../components/ProgressDots';
 import { formatTime } from '../utils/time';
+import { calculateCaloriesBurned } from '../utils/calories';
 import { useTranslations } from '../i18n';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -26,15 +31,31 @@ type TimerScreenProps = {
 };
 
 export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) => {
-  const { config, presetName } = route.params;
+  const { config, presetName, fromProgram } = route.params;
   const { saveSession } = useSessions();
+  const { saveWorkout } = useHealthSync();
+  const { profile } = useUserProfile();
+  const { completeWorkout } = useProgramProgress();
   const { t, interpolate, getMotivationalPhrase } = useTranslations();
   const { isTablet, isLandscape, timerFontSize, containerPadding } = useResponsive();
   const [motivationalText, setMotivationalText] = useState('');
+  const [caloriesBurned, setCaloriesBurned] = useState<number>(0);
+
+  // Animaciones
+  const motivationalScale = useRef(new Animated.Value(0)).current;
+  const motivationalOpacity = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const countdownScale = useRef(new Animated.Value(1)).current;
 
   const handleComplete = useCallback(
     async (completedRounds: number, totalWorkTime: number) => {
-      await saveSession({
+      // Calculate calories burned
+      const totalRestTime = (completedRounds - 1) * config.restSeconds;
+      const calories = calculateCaloriesBurned(profile, totalWorkTime, totalRestTime);
+      setCaloriesBurned(calories);
+
+      // Save to local storage
+      const session = await saveSession({
         preset: presetName,
         workSeconds: config.workSeconds,
         restSeconds: config.restSeconds,
@@ -42,9 +63,24 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
         completedRounds,
         totalWorkTime,
         completed: completedRounds >= config.rounds,
+        caloriesBurned: calories,
       });
+
+      // Sync to Health app if enabled and session was saved
+      if (session) {
+        const healthSaved = await saveWorkout(session);
+        if (healthSaved) {
+          console.log('Workout synced to Health app successfully');
+        }
+      }
+
+      // Mark program workout as completed if this workout is from a program
+      if (fromProgram && completedRounds >= config.rounds) {
+        await completeWorkout(fromProgram.programId, fromProgram.day);
+        console.log(`Program workout day ${fromProgram.day} marked as completed`);
+      }
     },
-    [config, presetName, saveSession]
+    [config, presetName, fromProgram, saveSession, saveWorkout, profile, completeWorkout]
   );
 
   const { state, start, pause, resume, reset, stop } = useTimer({
@@ -65,6 +101,68 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
     start();
   }, [start]);
 
+  // Animación de pulsación continua para el texto de fase
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
+    return () => pulseAnimation.stop();
+  }, []);
+
+  // Animación para texto motivacional (entrada con bounce)
+  const animateMotivationalText = () => {
+    // Reset
+    motivationalScale.setValue(0);
+    motivationalOpacity.setValue(0);
+
+    // Animación de entrada con bounce
+    Animated.parallel([
+      Animated.spring(motivationalScale, {
+        toValue: 1,
+        friction: 4,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(motivationalOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Animación de countdown (3, 2, 1)
+  useEffect(() => {
+    if (state.secondsLeft <= 3 && state.secondsLeft > 0 && state.phase !== 'prepare') {
+      // Animación de escala impactante
+      Animated.sequence([
+        Animated.timing(countdownScale, {
+          toValue: 1.3,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.spring(countdownScale, {
+          toValue: 1,
+          friction: 3,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [state.secondsLeft, state.phase]);
+
   // Update motivational text based on phase and progress
   useEffect(() => {
     if (state.phase === 'prepare') {
@@ -74,29 +172,34 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
 
     if (state.phase === 'finished') {
       setMotivationalText(getMotivationalPhrase('completed'));
+      animateMotivationalText();
       return;
     }
 
     // Last round
     if (state.currentRound === config.rounds && state.phase === 'work') {
       setMotivationalText(getMotivationalPhrase('lastRound'));
+      animateMotivationalText();
       return;
     }
 
     // Halfway
     if (state.currentRound === Math.ceil(config.rounds / 2) && state.secondsLeft === config.workSeconds) {
       setMotivationalText(getMotivationalPhrase('halfway'));
+      animateMotivationalText();
       return;
     }
 
     // Regular phase change
     if (state.secondsLeft === (state.phase === 'work' ? config.workSeconds : config.restSeconds)) {
       setMotivationalText(getMotivationalPhrase(state.phase === 'work' ? 'work' : 'rest'));
+      animateMotivationalText();
     }
 
     // Almost done countdown
     if (state.secondsLeft <= 3 && state.secondsLeft > 0) {
       setMotivationalText(getMotivationalPhrase('almostDone'));
+      animateMotivationalText();
     }
   }, [state.phase, state.currentRound, state.secondsLeft, config, getMotivationalPhrase]);
 
@@ -162,6 +265,26 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
     }
   };
 
+  // Función para el color del TEXTO según la fase (para buen contraste)
+  const getTextColor = (): string => {
+    switch (state.phase) {
+      case 'work':
+        // Texto OSCURO sobre fondo verde claro
+        return colors.text; // #030027
+      case 'rest':
+        // Texto OSCURO sobre fondo verde pastel claro
+        return colors.text; // #030027
+      case 'prepare':
+        // Texto primary sobre fondo blanco
+        return colors.primary; // #5465ff
+      case 'finished':
+        // Texto primary sobre fondo blanco
+        return colors.primary; // #5465ff
+      default:
+        return colors.text;
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
       <StatusBar
@@ -176,31 +299,60 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
             {interpolate(t.roundOf, { current: state.currentRound, total: config.rounds })}
           </Text>
         )}
-        <Text style={[styles.phaseText, { color: getAccentColor() }]}>
+        <Animated.Text
+          style={[
+            styles.phaseText,
+            {
+              color: getTextColor(),
+              transform: [{ scale: pulseAnim }]
+            }
+          ]}
+        >
           {getPhaseLabel()}
-        </Text>
+        </Animated.Text>
       </View>
 
       {/* Motivational Text */}
       {motivationalText && state.phase !== 'prepare' && (
-        <View style={styles.motivationalContainer}>
-          <Text style={[styles.motivationalText, { color: getAccentColor() }]}>
+        <Animated.View
+          style={[
+            styles.motivationalContainer,
+            {
+              opacity: motivationalOpacity,
+              transform: [{ scale: motivationalScale }]
+            }
+          ]}
+        >
+          <Text style={[styles.motivationalText, { color: getTextColor() }]}>
             {motivationalText}
           </Text>
-        </View>
+        </Animated.View>
       )}
 
       {/* Timer Display */}
       <View style={[styles.timerContainer, isLandscape && styles.timerContainerLandscape]}>
-        <Text style={[
-          styles.timer,
-          { fontSize: timerFontSize },
-          state.phase === 'finished' && styles.timerFinished
-        ]}>
+        <Animated.Text
+          style={[
+            styles.timer,
+            {
+              fontSize: timerFontSize,
+              transform: [{ scale: countdownScale }]
+            },
+            state.phase === 'finished' && styles.timerFinished
+          ]}
+        >
           {state.phase === 'finished' ? '00:00' : formatTime(state.secondsLeft)}
-        </Text>
+        </Animated.Text>
         {state.secondsLeft <= 3 && state.secondsLeft > 0 && state.phase !== 'prepare' && (
-          <View style={[styles.countdownIndicator, { backgroundColor: getAccentColor() }]} />
+          <Animated.View
+            style={[
+              styles.countdownIndicator,
+              {
+                backgroundColor: getAccentColor(),
+                transform: [{ scale: countdownScale }]
+              }
+            ]}
+          />
         )}
       </View>
 
@@ -220,6 +372,12 @@ export const TimerScreen: React.FC<TimerScreenProps> = ({ navigation, route }) =
           <Text style={styles.finishedSubtitle}>
             {interpolate(t.roundsCompleted, { rounds: config.rounds })}
           </Text>
+          {caloriesBurned > 0 && (
+            <View style={styles.caloriesContainer}>
+              <Text style={styles.caloriesLabel}>{t.caloriesBurned}</Text>
+              <Text style={styles.caloriesValue}>{caloriesBurned} kcal</Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -292,6 +450,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     letterSpacing: 3,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   motivationalContainer: {
     alignItems: 'center',
@@ -303,6 +464,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   timerContainer: {
     flex: 1,
@@ -316,6 +480,9 @@ const styles = StyleSheet.create({
     fontWeight: '200',
     color: colors.text,
     fontVariant: ['tabular-nums'],
+    textShadowColor: 'rgba(0, 0, 0, 0.08)',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 6,
   },
   timerFinished: {
     color: colors.primary,
@@ -340,6 +507,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: colors.textSecondary,
+  },
+  caloriesContainer: {
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 2,
+    borderTopColor: colors.border,
+    alignItems: 'center',
+  },
+  caloriesLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  caloriesValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: colors.accent,
   },
   controls: {
     padding: 24,

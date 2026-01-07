@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 import { RootStackParamList, Preset } from '../types';
 import { usePresets } from '../hooks/useStorage';
+import { usePremium } from '../hooks/usePremium';
 import { useTranslations } from '../i18n';
 
 type PresetsScreenProps = {
@@ -19,8 +21,12 @@ type PresetsScreenProps = {
 };
 
 export const PresetsScreen: React.FC<PresetsScreenProps> = ({ navigation }) => {
-  const { presets, toggleFavorite, deletePreset } = usePresets();
+  const { presets, toggleFavorite, deletePreset, getPresetLimitInfo } = usePresets();
+  const { isPremium } = usePremium();
   const { t, interpolate } = useTranslations();
+
+  const presetLimitInfo = getPresetLimitInfo(isPremium);
+  const customPresets = presets.filter(p => !p.isDefault);
 
   const handlePresetPress = (preset: Preset) => {
     navigation.navigate('Timer', {
@@ -86,6 +92,39 @@ export const PresetsScreen: React.FC<PresetsScreenProps> = ({ navigation }) => {
         <View style={{ width: 80 }} />
       </View>
 
+      {/* Preset Limit Banner */}
+      {!isPremium && customPresets.length >= 2 && (
+        <TouchableOpacity
+          style={styles.limitBanner}
+          onPress={() => navigation.navigate('Paywall', { source: 'custom_presets' })}
+          activeOpacity={0.7}
+        >
+          <View style={styles.limitBannerContent}>
+            <Text style={styles.limitBannerText}>
+              {presetLimitInfo.canAdd
+                ? interpolate(t.presetsUsed, {
+                    current: presetLimitInfo.current,
+                    limit: presetLimitInfo.limit || 3,
+                  })
+                : t.presetLimitReached}
+            </Text>
+            <Text style={styles.limitBannerSubtext}>
+              {t.upgradeForUnlimited}
+            </Text>
+          </View>
+          <Text style={styles.limitBannerArrow}>→</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Premium Badge */}
+      {isPremium && customPresets.length > 0 && (
+        <View style={styles.premiumBadge}>
+          <Text style={styles.premiumBadgeText}>
+            ⭐ {t.unlimited} · {customPresets.length} {t.presets}
+          </Text>
+        </View>
+      )}
+
       <FlatList
         data={presets}
         keyExtractor={(item) => item.id}
@@ -132,10 +171,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: borderRadius.xl,
     marginBottom: 14,
     borderWidth: 2,
     borderColor: colors.border,
+    ...shadows.sm,
   },
   presetInfo: {
     flex: 1,
@@ -169,5 +209,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: colors.textSecondary,
+  },
+  limitBanner: {
+    backgroundColor: colors.accent,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 18,
+    borderRadius: borderRadius.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadows.md,
+  },
+  limitBannerContent: {
+    flex: 1,
+  },
+  limitBannerText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.textLight,
+    marginBottom: 4,
+  },
+  limitBannerSubtext: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textLight,
+    opacity: 0.9,
+  },
+  limitBannerArrow: {
+    fontSize: 24,
+    color: colors.textLight,
+    fontWeight: '700',
+  },
+  premiumBadge: {
+    backgroundColor: colors.primary,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    ...shadows.primary,
+  },
+  premiumBadgeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textLight,
   },
 });

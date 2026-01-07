@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, StyleProp } from 'react-native';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 
@@ -85,20 +86,23 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 16,
     paddingHorizontal: 28,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonLarge: {
     paddingVertical: 20,
     paddingHorizontal: 36,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
+    ...shadows.md,
   },
   primaryButton: {
     backgroundColor: colors.primary,
+    ...shadows.primary,
   },
   secondaryButton: {
     backgroundColor: colors.secondary,
+    ...shadows.md,
   },
   outlineButton: {
     backgroundColor: 'transparent',

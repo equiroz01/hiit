@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 import { RootStackParamList } from '../types';
 import { useSessions } from '../hooks/useStorage';
+import { usePremium } from '../hooks/usePremium';
 import { useTranslations } from '../i18n';
 
 type StatsScreenProps = {
@@ -18,11 +20,15 @@ type StatsScreenProps = {
 };
 
 export const StatsScreen: React.FC<StatsScreenProps> = ({ navigation }) => {
-  const { sessions, getStats } = useSessions();
-  const { t } = useTranslations();
-  const stats = getStats();
+  const { sessions, getStats, getFilteredSessions, getStatsLimitInfo } = useSessions();
+  const { isPremium } = usePremium();
+  const { t, interpolate } = useTranslations();
 
-  const recentSessions = sessions
+  const stats = getStats();
+  const statsLimitInfo = getStatsLimitInfo(isPremium);
+  const visibleSessions = getFilteredSessions(isPremium);
+
+  const recentSessions = visibleSessions
     .filter(s => s.completed)
     .slice(-5)
     .reverse();
@@ -60,6 +66,50 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ navigation }) => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Stats Limit Banner - FREE USERS */}
+        {statsLimitInfo.isLimited && (
+          <TouchableOpacity
+            style={styles.limitBanner}
+            onPress={() => navigation.navigate('Paywall', { source: 'stats_history' })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.limitBannerContent}>
+              <Text style={styles.limitBannerText}>{t.unlockFullHistory}</Text>
+              <Text style={styles.limitBannerSubtext}>
+                {interpolate(t.workoutsHidden, { count: statsLimitInfo.hiddenSessions })} · {t.upgradeForFullHistory}
+              </Text>
+            </View>
+            <Text style={styles.limitBannerArrow}>→</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Premium Badge - PREMIUM USERS */}
+        {isPremium && sessions.length > 7 && (
+          <View style={styles.premiumBadge}>
+            <Text style={styles.premiumBadgeText}>
+              ⭐ {t.completeHistory} · {sessions.filter(s => s.completed).length} {t.workouts}
+            </Text>
+          </View>
+        )}
+
+        {/* Advanced Stats Button */}
+        {sessions.length > 0 && (
+          <TouchableOpacity
+            style={styles.advancedStatsButton}
+            onPress={() => {
+              if (isPremium) {
+                navigation.navigate('AdvancedStats');
+              } else {
+                navigation.navigate('Paywall', { source: 'stats_history' });
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.advancedStatsText}>{t.viewAdvancedStats}</Text>
+            <Text style={styles.advancedStatsArrow}>→</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Main Stats */}
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, styles.statCardPrimary]}>
@@ -149,14 +199,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.cardBackground,
     padding: 24,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     borderWidth: 2,
     borderColor: colors.border,
     alignItems: 'center',
+    ...shadows.sm,
   },
   statCardPrimary: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    ...shadows.primary,
   },
   statValue: {
     fontSize: 42,
@@ -191,10 +243,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
     padding: 18,
-    borderRadius: 14,
+    borderRadius: borderRadius.lg,
     marginBottom: 10,
     borderWidth: 2,
     borderColor: colors.border,
+    ...shadows.sm,
   },
   sessionInfo: {
     flex: 1,
@@ -231,5 +284,68 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
+  },
+  limitBanner: {
+    backgroundColor: colors.accent,
+    marginBottom: 20,
+    padding: 18,
+    borderRadius: borderRadius.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadows.md,
+  },
+  limitBannerContent: {
+    flex: 1,
+  },
+  limitBannerText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.textLight,
+    marginBottom: 4,
+  },
+  limitBannerSubtext: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textLight,
+    opacity: 0.9,
+  },
+  limitBannerArrow: {
+    fontSize: 24,
+    color: colors.textLight,
+    fontWeight: '700',
+  },
+  premiumBadge: {
+    backgroundColor: colors.primary,
+    marginBottom: 20,
+    padding: 14,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    ...shadows.primary,
+  },
+  premiumBadgeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textLight,
+  },
+  advancedStatsButton: {
+    backgroundColor: colors.primary,
+    marginBottom: 20,
+    padding: 18,
+    borderRadius: borderRadius.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadows.primary,
+  },
+  advancedStatsText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textLight,
+  },
+  advancedStatsArrow: {
+    fontSize: 24,
+    color: colors.textLight,
+    fontWeight: '700',
   },
 });

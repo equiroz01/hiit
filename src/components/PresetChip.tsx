@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 import { Preset } from '../types';
 
 interface PresetChipProps {
@@ -27,7 +28,7 @@ export const PresetChip: React.FC<PresetChipProps> = ({ preset, onPress, selecte
 const styles = StyleSheet.create({
   chip: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     borderWidth: 2,
     borderColor: colors.border,
     paddingVertical: 16,
@@ -35,10 +36,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
     minWidth: 120,
     alignItems: 'center',
+    ...shadows.sm,
   },
   chipSelected: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    ...shadows.primary,
   },
   name: {
     fontSize: 17,

@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 import { RootStackParamList, Preset, TimerConfig } from '../types';
 import { usePresets, useLastConfig, useSessions } from '../hooks/useStorage';
 import { TimePicker, RoundPicker } from '../components/TimePicker';
@@ -18,16 +21,18 @@ import { Button } from '../components/Button';
 import { getTotalWorkoutTime, formatTimeShort } from '../utils/time';
 import { useTranslations } from '../i18n';
 import { useResponsive } from '../hooks/useResponsive';
+import { usePremium } from '../hooks/usePremium';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { presets } = usePresets();
+  const { presets, savePreset, canAddPreset, getPresetLimitInfo } = usePresets();
   const { lastConfig, saveLastConfig } = useLastConfig();
   const { getStats } = useSessions();
-  const { t } = useTranslations();
+  const { isPremium } = usePremium();
+  const { t, interpolate } = useTranslations();
   const { isTablet, containerPadding, cardPadding } = useResponsive();
 
   const [workSeconds, setWorkSeconds] = useState(lastConfig.workSeconds);
@@ -36,6 +41,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
 
   const stats = getStats();
+  const presetLimitInfo = getPresetLimitInfo(isPremium);
 
   useEffect(() => {
     setWorkSeconds(lastConfig.workSeconds);
@@ -65,6 +71,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       config,
       presetName: selectedPreset?.name,
     });
+  };
+
+  const handleSavePreset = () => {
+    // Check if user can add more presets
+    if (!canAddPreset(isPremium)) {
+      // Show paywall
+      Alert.alert(
+        t.presetLimitReached,
+        interpolate(t.presetLimitMessage, { limit: presetLimitInfo.limit || 3 }),
+        [
+          { text: t.cancel, style: 'cancel' },
+          {
+            text: t.upgradeToPremium,
+            onPress: () => navigation.navigate('Paywall', { source: 'custom_presets' }),
+          },
+        ]
+      );
+      return;
+    }
+
+    // Prompt for preset name
+    Alert.prompt(
+      t.createPreset,
+      'Enter a name for your custom preset:',
+      [
+        { text: t.cancel, style: 'cancel' },
+        {
+          text: t.save,
+          onPress: async (presetName: string | undefined) => {
+            if (presetName && presetName.trim()) {
+              await savePreset({
+                name: presetName.trim(),
+                workSeconds,
+                restSeconds,
+                rounds,
+                isFavorite: false,
+              });
+              Alert.alert('Success!', `Preset "${presetName}" saved successfully.`);
+            }
+          },
+        },
+      ],
+      'plain-text',
+      '',
+      'default'
+    );
   };
 
   const totalTime = getTotalWorkoutTime(workSeconds, restSeconds, rounds);
@@ -136,6 +188,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </ScrollView>
         </View>
 
+        {/* Training Programs Button */}
+        <TouchableOpacity
+          style={styles.programsButton}
+          onPress={() => navigation.navigate('Programs')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.programsButtonContent}>
+            <Text style={styles.programsButtonIcon}>📋</Text>
+            <View style={styles.programsButtonText}>
+              <Text style={styles.programsButtonTitle}>{t.trainingPrograms}</Text>
+              <Text style={styles.programsButtonSubtitle}>{t.browsePrograms}</Text>
+            </View>
+          </View>
+          <Text style={styles.programsButtonArrow}>→</Text>
+        </TouchableOpacity>
+
         {/* Custom Config */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t.custom}</Text>
@@ -166,6 +234,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
           </View>
         </View>
+
+        {/* Save Preset Button */}
+        <TouchableOpacity
+          style={styles.savePresetButton}
+          onPress={handleSavePreset}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.savePresetText}>💾 {t.createPreset}</Text>
+          <Text style={styles.savePresetHint}>
+            {presetLimitInfo.isUnlimited
+              ? t.unlimited
+              : interpolate(t.presetsUsed, {
+                  current: presetLimitInfo.current,
+                  limit: presetLimitInfo.limit || 3,
+                })}
+          </Text>
+        </TouchableOpacity>
 
         {/* Total Time */}
         <View style={styles.totalContainer}>
@@ -223,12 +308,13 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 46,
     height: 46,
-    borderRadius: 23,
+    borderRadius: borderRadius.full,
     backgroundColor: colors.cardBackground,
     borderWidth: 2,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.sm,
   },
   headerButtonIcon: {
     fontSize: 20,
@@ -237,7 +323,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 18,
-    borderRadius: 24,
+    borderRadius: borderRadius.full,
+    ...shadows.primary,
   },
   statsButtonText: {
     fontSize: 16,
@@ -247,8 +334,9 @@ const styles = StyleSheet.create({
   statsCard: {
     backgroundColor: colors.primary,
     padding: 18,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     marginBottom: 28,
+    ...shadows.primary,
   },
   statsCardText: {
     fontSize: 16,
@@ -278,11 +366,77 @@ const styles = StyleSheet.create({
   presetsContainer: {
     paddingVertical: 6,
   },
+  programsButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: borderRadius.xl,
+    padding: 20,
+    marginBottom: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  programsButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  programsButtonIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  programsButtonText: {
+    flex: 1,
+  },
+  programsButtonTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textLight,
+    marginBottom: 4,
+  },
+  programsButtonSubtitle: {
+    fontSize: 14,
+    color: colors.textLight,
+    opacity: 0.9,
+  },
+  programsButtonArrow: {
+    fontSize: 24,
+    color: colors.textLight,
+    fontWeight: '700',
+    marginLeft: 12,
+  },
   configCard: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     borderWidth: 2,
     borderColor: colors.border,
+    ...shadows.sm,
+  },
+  savePresetButton: {
+    backgroundColor: colors.cardBackground,
+    padding: 18,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: colors.border,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadows.sm,
+  },
+  savePresetText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  savePresetHint: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.secondary,
   },
   totalContainer: {
     flexDirection: 'row',
@@ -290,9 +444,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     borderWidth: 2,
     borderColor: colors.border,
+    ...shadows.sm,
   },
   totalLabel: {
     fontSize: 18,

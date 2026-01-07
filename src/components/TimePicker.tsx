@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 
 interface TimePickerProps {
   label: string;
@@ -129,17 +130,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.cardBackgroundAlt,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   button: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.primary,
   },
   buttonDisabled: {
     backgroundColor: colors.border,

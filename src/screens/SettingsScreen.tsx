@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,13 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Switch,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/spacing';
 import { RootStackParamList } from '../types';
 import {
   useSettings,
@@ -17,6 +21,9 @@ import {
   supportedLanguages,
   SupportedLanguage
 } from '../hooks/useSettings';
+import { useHealthSync } from '../hooks/useHealthSync';
+import { usePremium } from '../hooks/usePremium';
+import { useAuth } from '../hooks/useAuth';
 import { useTranslations } from '../i18n';
 
 type SettingsScreenProps = {
@@ -25,10 +32,56 @@ type SettingsScreenProps = {
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { settings, updateLanguage } = useSettings();
+  const { state: healthState, loading: healthLoading, enableSync, disableSync } = useHealthSync();
+  const { isPremium, unlockPremiumForTesting, resetPremiumForTesting } = usePremium();
+  const { user, isAuthenticated, signOut } = useAuth();
   const { t } = useTranslations();
+  const [togglingHealth, setTogglingHealth] = useState(false);
 
   const handleLanguageSelect = async (lang: SupportedLanguage) => {
     await updateLanguage(lang);
+  };
+
+  const handleHealthToggle = async (value: boolean) => {
+    setTogglingHealth(true);
+    try {
+      if (value) {
+        const success = await enableSync();
+        if (!success) {
+          Alert.alert(
+            t.healthSync,
+            'Failed to enable health sync. Please check permissions in Settings.',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        await disableSync();
+      }
+    } catch (error) {
+      console.error('Error toggling health sync:', error);
+    } finally {
+      setTogglingHealth(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      t.signOut,
+      'Are you sure you want to sign out? Your data will remain on this device.',
+      [
+        { text: t.cancel, style: 'cancel' },
+        {
+          text: t.signOut,
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await signOut();
+            if (error) {
+              Alert.alert('Error', error.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -45,6 +98,130 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ACCOUNT</Text>
+          {isAuthenticated ? (
+            <View style={styles.card}>
+              {/* User Info */}
+              <View style={styles.profileContainer}>
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileTitle}>
+                    {user?.email || 'Anonymous User'}
+                  </Text>
+                  <Text style={styles.profileDescription}>
+                    {t.cloudSync} • {t.synced}
+                  </Text>
+                </View>
+              </View>
+              {/* Sign Out Button */}
+              <TouchableOpacity
+                style={styles.signOutButton}
+                onPress={handleSignOut}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.signOutText}>{t.signOut}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('Auth')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.profileContainer}>
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileTitle}>{t.signIn}</Text>
+                  <Text style={styles.profileDescription}>
+                    {t.syncDescription}
+                  </Text>
+                </View>
+                <Text style={styles.arrow}>→</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Profile Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t.profile}</Text>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('Profile')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.profileContainer}>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileTitle}>{t.userProfile}</Text>
+                <Text style={styles.profileDescription}>
+                  {t.profileIncompleteDescription}
+                </Text>
+              </View>
+              <Text style={styles.arrow}>→</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Premium Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t.premium}</Text>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('Paywall', { source: 'settings' })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.profileContainer}>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileTitle}>
+                  {isPremium ? `${t.premium} ✓` : t.upgradeToPremium}
+                </Text>
+                <Text style={styles.profileDescription}>
+                  {isPremium
+                    ? 'All premium features unlocked'
+                    : t.unlockAllFeatures
+                  }
+                </Text>
+              </View>
+              <Text style={styles.arrow}>→</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Health Sync Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t.healthSync}</Text>
+          <View style={styles.card}>
+            <View style={styles.healthSyncContainer}>
+              <View style={styles.healthSyncInfo}>
+                <Text style={styles.healthSyncTitle}>{t.enableHealthSync}</Text>
+                <Text style={styles.healthSyncDescription}>
+                  {healthState.isAvailable
+                    ? t.healthSyncDescription
+                    : t.healthNotAvailable}
+                </Text>
+                {healthState.isEnabled && (
+                  <Text style={styles.healthSyncStatus}>
+                    {t.healthSyncEnabled}
+                  </Text>
+                )}
+              </View>
+              {healthLoading || togglingHealth ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Switch
+                  value={healthState.isEnabled}
+                  onValueChange={handleHealthToggle}
+                  disabled={!healthState.isAvailable}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={colors.cardBackground}
+                  ios_backgroundColor={colors.border}
+                />
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Language Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t.language}</Text>
           <View style={styles.languageList}>
@@ -74,6 +251,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             ))}
           </View>
         </View>
+
+        {/* Development Section - ONLY FOR TESTING */}
+        {__DEV__ && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>⚠️ DEVELOPMENT ONLY</Text>
+            <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.devButton}
+                onPress={isPremium ? resetPremiumForTesting : unlockPremiumForTesting}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.devButtonText}>
+                  {isPremium ? '🔓 Reset Premium (Test)' : '🔒 Unlock Premium (Test)'}
+                </Text>
+                <Text style={styles.devButtonDescription}>
+                  {isPremium
+                    ? 'Remove premium access for testing'
+                    : 'Unlock all premium features without IAP'
+                  }
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         <View style={styles.appInfo}>
           <Text style={styles.appName}>Pulse HIIT</Text>
@@ -121,12 +322,73 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 14,
   },
-  languageList: {
+  card: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     borderWidth: 2,
     borderColor: colors.border,
     overflow: 'hidden',
+    ...shadows.sm,
+  },
+  healthSyncContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+  },
+  healthSyncInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  healthSyncTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  healthSyncDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  healthSyncStatus: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+  },
+  profileInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  profileTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  profileDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  arrow: {
+    fontSize: 24,
+    color: colors.textSecondary,
+  },
+  languageList: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.xl,
+    borderWidth: 2,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    ...shadows.sm,
   },
   languageOption: {
     flexDirection: 'row',
@@ -169,5 +431,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: colors.textSecondary,
+  },
+  devButton: {
+    padding: 18,
+  },
+  devButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  devButtonDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  signOutButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: 12,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#F44336',
+    textAlign: 'center',
   },
 });
